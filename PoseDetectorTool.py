@@ -31,6 +31,18 @@ def draw_landmarks_on_image(rgb_image, detection_result):
     return annotated_image
 
 
+def pose_analysis(detection_result):
+    landmarks = detection_result.pose_world_landmarks[0]
+    PoseLandmark = solutions.pose.PoseLandmark
+    if (landmarks[PoseLandmark.RIGHT_WRIST].y < landmarks[PoseLandmark.NOSE].y) and \
+       (landmarks[PoseLandmark.LEFT_WRIST].y  < landmarks[PoseLandmark.NOSE].y):
+        print("both hands up")
+    elif landmarks[PoseLandmark.RIGHT_WRIST].y < landmarks[PoseLandmark.NOSE].y:
+        print("right hand up")
+    elif landmarks[PoseLandmark.LEFT_WRIST].y < landmarks[PoseLandmark.NOSE].y:
+        print("left hand up")
+    else:
+        print("no hands up")
 
 
 
@@ -50,6 +62,9 @@ detection_result = detector.detect(image)
 
 # STEP 5: Process the detection result. In this case, visualize it.
 annotated_image = draw_landmarks_on_image(image.numpy_view(), detection_result)
+
+# Analyze the pose           
+pose_analysis(detection_result)
 
 # Convert the mediapipe image to OpenCV format and display it
 cv2.imshow("Output", cv2.cvtColor(annotated_image, cv2.COLOR_BGR2RGB))
