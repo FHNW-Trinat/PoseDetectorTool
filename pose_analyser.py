@@ -4,8 +4,9 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from mediapipe.framework.formats import landmark_pb2
 import enum
+import numpy
 from typing import Tuple
-
+from analyser_interface import AnalyserInterface
 
 class PoseDetected(enum.IntEnum):
     """The poses that can be detected."""
@@ -17,10 +18,10 @@ class PoseDetected(enum.IntEnum):
 
 
 
-class PoseAnalyser:
+class PoseAnalyser(AnalyserInterface):
 
     # class attribute
-    handup_threshold = 0.2 # minimum distance in meters between hand and nose to be considered a hand up
+    handup_threshold = 0.1 # minimum distance in meters between hand and nose to be considered a hand up
 
     def __init__(self):
         pass
@@ -40,7 +41,10 @@ class PoseAnalyser:
         +y
         :param detection_result: landmarks calculated from mediapipe 
         :return: PoseDetected enum
-        """        
+        """  
+        if detection_result is None or len(detection_result.pose_landmarks) == 0:
+            return None      
+          
         landmarks = detection_result.pose_world_landmarks[0]
         PoseLandmark = solutions.pose.PoseLandmark
         y_pos = { 'RIGHT_WRIST': landmarks[PoseLandmark.RIGHT_WRIST].y,
@@ -66,7 +70,7 @@ class PoseAnalyser:
         return detected_pose
     
 
-    def draw_landmarks_on_image(self, rgb_image, detection_result):
+    def draw_landmarks_on_image(self, rgb_image, detection_result) -> numpy.ndarray:
         """
         Draws the pose landmarks on the given RGB image.
         Args:
@@ -75,6 +79,9 @@ class PoseAnalyser:
         Returns:
             numpy.ndarray: The annotated image with the pose landmarks drawn.
         """
+        if detection_result is None or len(detection_result.pose_landmarks) == 0:
+            return rgb_image # return the original image if no landmarks are detected
+        
         pose_landmarks_list = detection_result.pose_landmarks
         annotated_image = rgb_image.copy()
 

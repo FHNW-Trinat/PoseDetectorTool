@@ -1,11 +1,15 @@
 import cv2
 import gesture_analyser
+import pose_analyser
 import live_stream_gesture_detector as stream_detector
-
+import live_stream_pose_detector as pose_detector
 
 # Create a GestureAnalyser object
-analyser = gesture_analyser.GestureAnalyser()
-detector = stream_detector.LiveStreamGuestureDetector()
+analyser_hand = gesture_analyser.GestureAnalyser()
+detector_hand = stream_detector.LiveStreamGestureDetector()
+analyser_pose = pose_analyser.PoseAnalyser()
+detector_pose = pose_detector.LiveStreamPoseDetector()
+
 
  # Get Webcam video stream with OpenCV
 cap = cv2.VideoCapture(0)
@@ -17,24 +21,17 @@ while cap.isOpened():
 
     # Analyse the frame asynchronously
     frame_timestamp_ms = int(cap.get(cv2.CAP_PROP_POS_MSEC))
-    detector.analyse_async(frame, frame_timestamp_ms)
-    # Get the last detection results from the async analysis
-    detection_result = detector.get_detection_results()
-        
-    # check if detection result is available, if so analyse it
-    if detection_result is not None and len(detection_result.hand_landmarks) > 0:
-        # Draw the landmarks on the frame
-        annotated_image = analyser.draw_landmarks_on_image(frame, detection_result)
-          
-        # Analyse the detection result for a pose
-        detected_pose = analyser.analyse(detection_result)
-        print(f"Detected pose: {detected_pose.category_name}")
+    detector_hand.analyse_async(frame, frame_timestamp_ms)
+    detector_hand.process_landmarks(analyser_hand)
 
-    else:
-        # Display the original image/frame.
-        annotated_image = frame
+    detector_pose.analyse_async(frame, frame_timestamp_ms)
+    # Not nice, but: this is to get both hand and pose landmarks into the output image
+    detector_pose._frame = detector_hand.get_annotated_image()
+    detector_pose.process_landmarks(analyser_pose)
 
-    cv2.imshow('MediaPipe Pose Landmarks', annotated_image)
+    print(f"Detected pose: {detector_hand.get_result_string()}   {detector_pose.get_result_string()} ")
+
+    cv2.imshow('MediaPipe Pose Landmarks', detector_pose.get_annotated_image())
 
     # check for the 'esc' key to exit
     # wait for 100ms before next iteration
@@ -42,5 +39,6 @@ while cap.isOpened():
         break
 
 cap.release()
-detector.close()
+detector_hand.close()
+detector_pose.close()
 cv2.destroyAllWindows()

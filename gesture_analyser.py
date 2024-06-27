@@ -4,14 +4,13 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from mediapipe.framework.formats import landmark_pb2
 import enum
+import numpy
 from typing import Tuple
+from analyser_interface import AnalyserInterface
 
 
+class GestureAnalyser(AnalyserInterface):
 
-class GestureAnalyser:
-
-    # class attribute
-    handup_threshold = 0.2 # minimum distance in meters between hand and nose to be considered a hand up
 
     def __init__(self):
         pass
@@ -20,10 +19,13 @@ class GestureAnalyser:
     def analyse(self, detection_result):
         """ Analyzes the given detection result and returns the first / most prominent gesture.
         """
+        if detection_result is None or len(detection_result.hand_landmarks) == 0:
+            return None  
+        # Get the landmarks of the first hand 
         return detection_result.gestures[0][0]
     
 
-    def draw_landmarks_on_image(self, rgb_image, detection_result):
+    def draw_landmarks_on_image(self, rgb_image, detection_result) -> numpy.ndarray:
         """
         Draws the hand landmarks on the given RGB image.
         Args:
@@ -32,6 +34,9 @@ class GestureAnalyser:
         Returns:
             numpy.ndarray: The annotated image with the hand landmarks drawn.
         """
+        if detection_result is None or len(detection_result.hand_landmarks) == 0:
+            return rgb_image # return the original image if no landmarks are detected
+
         hand_landmarks_list = detection_result.hand_landmarks
         annotated_image = rgb_image.copy()
 

@@ -1,14 +1,15 @@
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+from analyser_interface import DetectorBase
 
-
-class LiveStreamGuestureDetector:
+class LiveStreamGestureDetector(DetectorBase):
 
     def __init__(self) -> None:
+        super().__init__()
         self._detector = self.create_livestream_detector()
-        self._detection_results = None
-    
+
+
 
     def create_livestream_detector(self) -> vision.HandLandmarker:
         """Creates and returns a HandLandmarker instance for live stream gesture detection.
@@ -35,15 +36,19 @@ class LiveStreamGuestureDetector:
             frame: The frame to be analyzed.
             frame_timestamp_ms: The timestamp of the frame in milliseconds.
         """
+        self._frame = frame
         # Convert the OpenCV image to MediaPipe Image.
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
         # Process the image and get the pose landmarks (results processing in callback).
         self._detector.recognize_async(mp_image, frame_timestamp_ms)
 
 
-    def get_detection_results(self) -> vision.HandLandmarkerResult:
-        """Returns the detection results."""
-        return self._detection_results
+    def get_result_string(self): 
+        """Returns a string representation of the results."""  
+        if self._analyser_results is None:
+            return None
+        return self._analyser_results.category_name
+
     
     def close(self):
         """Closes the detector and performs any necessary cleanup operations."""
