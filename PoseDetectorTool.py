@@ -10,6 +10,9 @@ detector_hand = stream_detector.LiveStreamGestureDetector()
 analyser_pose = pose_analyser.PoseAnalyser()
 detector_pose = pose_detector.LiveStreamPoseDetector()
 
+# Initialize the detector and analyser with the pose model
+analyser = analyser_pose
+detector = detector_pose
 
  # Get Webcam video stream with OpenCV
 cap = cv2.VideoCapture(0)
@@ -21,22 +24,27 @@ while cap.isOpened():
 
     # Analyse the frame asynchronously
     frame_timestamp_ms = int(cap.get(cv2.CAP_PROP_POS_MSEC))
-    detector_hand.analyse_async(frame, frame_timestamp_ms)
-    detector_hand.process_landmarks(analyser_hand)
+    detector.analyse_async(frame, frame_timestamp_ms)
+    detector.process_landmarks(analyser)
 
-    detector_pose.analyse_async(frame, frame_timestamp_ms)
-    # Not nice, but: this is to get both hand and pose landmarks into the output image
-    detector_pose._frame = detector_hand.get_annotated_image()
-    detector_pose.process_landmarks(analyser_pose)
+    print(f"Detected: {detector.get_result_string()}")
 
-    print(f"Detected pose: {detector_hand.get_result_string()}   {detector_pose.get_result_string()} ")
+    cv2.imshow('MediaPipe Pose Landmarks', detector.get_annotated_image())
 
-    cv2.imshow('MediaPipe Pose Landmarks', detector_pose.get_annotated_image())
 
+    key_pressed = cv2.waitKey(100)
     # check for the 'esc' key to exit
+    # check for the '1' key to enable pose detection
+    # check for the '2' key to enable hand detection
     # wait for 100ms before next iteration
-    if cv2.waitKey(100) & 0xFF == 27:
+    if (key_pressed & 0xFF) == 27:
         break
+    if (key_pressed & 0xFF) == ord('1'):
+        analyser = analyser_pose
+        detector = detector_pose
+    if (key_pressed & 0xFF) == ord('2'):
+        analyser = analyser_hand
+        detector = detector_hand
 
 cap.release()
 detector_hand.close()
